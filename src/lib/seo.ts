@@ -40,8 +40,9 @@ export const PUBLIC_ROUTES: Array<{
     { path: '/privacy', changeFrequency: 'yearly', priority: 0.3 },
   ];
 
-export function absoluteUrl(path: string): string {
-  return `${siteUrl}${path.startsWith('/') ? path : `/${path}`}`;
+export function absoluteUrl(path: string = '/'): string {
+  const safePath = path || '/';
+  return `${siteUrl}${safePath.startsWith('/') ? safePath : `/${safePath}`}`;
 }
 
 type PageSeo = {

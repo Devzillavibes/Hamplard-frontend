@@ -12,22 +12,8 @@ export const metadata: Metadata = buildMetadata({
   title: "Hamplard",
   description:
     "Learn practical skills — tailoring, makeup, baking, photography and more. Africa's online vocational skills platform.",
-  openGraph: {
-    title: "Hamplard",
-    description:
-      "Learn practical skills — tailoring, makeup, baking, photography and more. Africa's online vocational skills platform.",
-    url: "/",
-    siteName: "Hamplard",
-    type: "website",
-    images: [{ url: DEFAULT_OG_IMAGE, alt: "Hamplard brand preview" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Hamplard",
-    description:
-      "Learn practical skills — tailoring, makeup, baking, photography and more. Africa's online vocational skills platform.",
-    images: [DEFAULT_OG_IMAGE],
-  },
+  path: "/",
+  images: [DEFAULT_OG_IMAGE],
 });
 
 // Sample testimonials data
