@@ -6,11 +6,14 @@ import React, {
 } from 'react';
 import { Loader2 } from 'lucide-react';
 import { VideoControls } from './VideoControls';
+import type { VideoQualityLevel, VideoQualities } from '@/types';
 
 // ── Types ──────────────────────────────────────────────────────────
 interface VideoPlayerProps {
   /** URL of the video to play */
   src: string;
+  /** Per-resolution source URLs for the quality selector */
+  videoQualities?: VideoQualities;
   /** URL of the WebVTT subtitle track (optional) */
   captionsUrl?: string;
   /** enrollment id — used when saving progress to the API */
@@ -21,6 +24,12 @@ interface VideoPlayerProps {
   onProgress?: (watchedSecs: number) => void;
   /** Called once when the video reaches ≥95% of its duration */
   onComplete?: () => void;
+  /** Called when the video element fires its 'ended' event */
+  onEnded?: () => void;
+  /** Whether autoplay-next is currently enabled */
+  autoplay?: boolean;
+  /** Called when the user toggles the autoplay switch in the controls */
+  onAutoplayChange?: (enabled: boolean) => void;
   /** Class name applied to the outermost wrapper */
   className?: string;
 }
@@ -28,18 +37,23 @@ interface VideoPlayerProps {
 // ── Constants ─────────────────────────────────────────────────────
 const AUTOSAVE_INTERVAL_MS  = 30_000; // save every 30 s
 const COMPLETION_THRESHOLD  = 0.95;   // 95 %
+const CAPTIONS_STORAGE_KEY = 'hamplard-captions-enabled';
 
 // ── Component ─────────────────────────────────────────────────────
 export const VideoPlayer = forwardRef<
   HTMLVideoElement,
   VideoPlayerProps
->(function videoPlayer({
+>(function VideoPlayerComponent({
   src,
+  videoQualities,
   captionsUrl,
   enrollmentId,
   lessonId,
   onProgress,
   onComplete,
+  onEnded,
+  autoplay = false,
+  onAutoplayChange,
   className = '',
 }, ref) {
   // ── Refs ──────────────────────────────────────────────────────
@@ -49,6 +63,7 @@ export const VideoPlayer = forwardRef<
   const saveTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const completedRef  = useRef(false);        // fire onComplete only once
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const captionsTrackRef = useRef<HTMLTrackElement | null>(null);
 
   // ── State ─────────────────────────────────────────────────────
   const [playing,      setPlaying]      = useState(false);
@@ -57,10 +72,28 @@ export const VideoPlayer = forwardRef<
   const [volume,       setVolume]       = useState(1);
   const [muted,        setMuted]        = useState(false);
   const [speed,        setSpeed]        = useState(1);
-  const [subtitlesOn,  setSubtitlesOn]  = useState(false);
+  const [subtitlesOn, setSubtitlesOn] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.sessionStorage.getItem(CAPTIONS_STORAGE_KEY) === 'true';
+  });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [buffering,    setBuffering]    = useState(false);
   const [showControls, setShowControls] = useState(true);
+
+  // ── Quality state ─────────────────────────────────────────────
+  const [quality, setQuality] = useState<VideoQualityLevel>('auto');
+  // Tracks the URL currently loaded into the <video> element
+  const [activeSrc, setActiveSrc] = useState(src);
+  // Stash position before switching so we can restore it after load
+  const pendingSeekRef = useRef<number | null>(null);
+
+  // ── Reset quality when the lesson changes ────────────────────
+  useEffect(() => {
+    setQuality('auto');
+    setActiveSrc(src);
+    pendingSeekRef.current = null;
+    pendingPlayRef.current = false;
+  }, [src]);
 
   // ── Save progress helper ──────────────────────────────────────
   const saveProgress = useCallback(async () => {
@@ -87,13 +120,17 @@ export const VideoPlayer = forwardRef<
 
   // ── Sync subtitle track visibility ───────────────────────────
   useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
-    const track = vid.textTracks[0];
-    if (track) {
-      track.mode = subtitlesOn ? 'showing' : 'hidden';
-    }
+    window.sessionStorage.setItem(CAPTIONS_STORAGE_KEY, String(subtitlesOn));
   }, [subtitlesOn]);
+
+  const syncCaptionTrack = useCallback(() => {
+    const track = captionsTrackRef.current?.track;
+    if (track) track.mode = subtitlesOn && captionsUrl ? 'showing' : 'hidden';
+  }, [captionsUrl, subtitlesOn]);
+
+  useEffect(() => {
+    syncCaptionTrack();
+  }, [syncCaptionTrack, activeSrc]);
 
   // ── Fullscreen change listener ────────────────────────────────
   useEffect(() => {
@@ -139,7 +176,29 @@ export const VideoPlayer = forwardRef<
           e.preventDefault();
           handleSeek(Math.min(vid.duration || Infinity, vid.currentTime + 10));
           break;
-        default:
+        case 'ArrowUp':
+          e.preventDefault();
+          handleVolume(Math.min(1, vid.volume + 0.1));
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          handleVolume(Math.max(0, vid.volume - 0.1));
+          break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          if (vid.duration) {
+            e.preventDefault();
+            const pct = parseInt(e.key, 10) / 10;
+            handleSeek(vid.duration * pct);
+          }
           break;
       }
     };
@@ -185,6 +244,20 @@ export const VideoPlayer = forwardRef<
     if (vid) setDuration(vid.duration);
   };
 
+  // Restore playback position + resume after a quality src switch
+  const handleCanPlay = useCallback(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (pendingSeekRef.current !== null) {
+      vid.currentTime = pendingSeekRef.current;
+      pendingSeekRef.current = null;
+    }
+    if (pendingPlayRef.current) {
+      pendingPlayRef.current = false;
+      vid.play().catch(() => {});
+    }
+  }, []);
+
   const handlePlay  = () => setPlaying(true);
   const handlePause = () => {
     setPlaying(false);
@@ -192,6 +265,11 @@ export const VideoPlayer = forwardRef<
   };
   const handleWaiting = () => setBuffering(true);
   const handlePlaying = () => setBuffering(false);
+  const handleEnded   = () => {
+    setPlaying(false);
+    saveProgress();
+    onEnded?.();
+  };
 
   // ── Control callbacks (passed to VideoControls) ───────────────
   const togglePlayPause = () => {
@@ -229,6 +307,35 @@ export const VideoPlayer = forwardRef<
 
   const handleSubtitles = () => setSubtitlesOn((s) => !s);
 
+  // ── Quality switching ─────────────────────────────────────────
+  // Ref to remember whether we should resume playback after a src switch
+  const pendingPlayRef = useRef(false);
+
+  const handleQualityChange = useCallback((q: VideoQualityLevel) => {
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    // Resolve the URL for this quality level
+    const url =
+      q === 'auto'
+        ? src
+        : videoQualities?.[q as keyof VideoQualities] ?? src;
+
+    // Nothing to do if the src isn't actually changing
+    if (url === activeSrc && q === quality) return;
+
+    // Stash current position so we can restore it after the new src loads
+    pendingSeekRef.current = vid.currentTime;
+    const wasPlaying = !vid.paused;
+
+    setQuality(q);
+    setActiveSrc(url);
+
+    // The <video> src update + seek happens inside handleCanPlay below.
+    // Store wasPlaying in a ref so handleCanPlay can resume if needed.
+    pendingPlayRef.current = wasPlaying;
+  }, [src, videoQualities, activeSrc, quality]);
+
   const toggleFullscreen = async () => {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
@@ -246,12 +353,6 @@ export const VideoPlayer = forwardRef<
       className={`relative group bg-black rounded-2xl overflow-hidden select-none ${className}`}
       onMouseMove={resetControlsTimer}
       onMouseEnter={resetControlsTimer}
-      // Clicking on the video area (outside controls) toggles play/pause
-      onClick={(e) => {
-        // Don't fire if a child control was clicked
-        if ((e.target as HTMLElement).closest('[data-controls]')) return;
-        togglePlayPause();
-      }}
       role="region"
       aria-label="Video player"
       // Let the wrapper receive keyboard events
@@ -264,27 +365,43 @@ export const VideoPlayer = forwardRef<
       {/* eslint-disable-next-line jsx-a11y/media-has-caption -- captions handled via <track> */}
       <video
         ref={videoRef}
-        src={src}
-        className="w-full h-full"
+        src={activeSrc}
+        className="lesson-caption-video w-full h-full"
         preload="metadata"
         playsInline
+        onClick={togglePlayPause}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onCanPlay={handleCanPlay}
         onPlay={handlePlay}
         onPause={handlePause}
         onWaiting={handleWaiting}
         onPlaying={handlePlaying}
+        onEnded={handleEnded}
         {...({ controlsList: 'nodownload' } as React.VideoHTMLAttributes<HTMLVideoElement>)}
       >
         {captionsUrl && (
           <track
+            ref={captionsTrackRef}
             kind="subtitles"
             src={captionsUrl}
-            default={subtitlesOn}
-            label="Subtitles"
+            srcLang="en"
+            label="English captions"
+            onLoad={syncCaptionTrack}
           />
         )}
       </video>
+      <style>{`
+        .lesson-caption-video::cue {
+          background: rgba(0, 0, 0, 0.82);
+          color: #fff;
+          font-family: Arial, sans-serif;
+          font-size: 1.05em;
+          font-weight: 600;
+          line-height: 1.35;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        }
+      `}</style>
 
       {/* Buffering spinner */}
       {buffering && (
@@ -299,7 +416,6 @@ export const VideoPlayer = forwardRef<
         className={`transition-opacity duration-300 ${
           showControls || !playing ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
-        onClick={(e) => e.stopPropagation()}
       >
         <VideoControls
           playing={playing}
@@ -311,6 +427,11 @@ export const VideoPlayer = forwardRef<
           subtitlesOn={subtitlesOn}
           isFullscreen={isFullscreen}
           hasCaptions={!!captionsUrl}
+          autoplay={autoplay}
+          onAutoplayChange={onAutoplayChange ?? (() => {})}
+          quality={quality}
+          videoQualities={videoQualities}
+          onQualityChange={handleQualityChange}
           onPlayPause={togglePlayPause}
           onSeek={handleSeek}
           onVolume={handleVolume}
