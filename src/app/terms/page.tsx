@@ -25,7 +25,7 @@ export default function TermsPage() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setActiveSection(entry.id);
+            setActiveSection(entry.target.id);
           }
         });
       },
@@ -55,6 +55,7 @@ export default function TermsPage() {
                 <li key={id}>
                   <Link
                     href={`#${id}`}
+                    aria-current={activeSection === id ? 'true' : undefined}
                     className={`block rounded px-3 py-2 text-sm transition-colors ${
                       activeSection === id
                         ? 'bg-[#EEEDFE] font-semibold text-[#26215C]'

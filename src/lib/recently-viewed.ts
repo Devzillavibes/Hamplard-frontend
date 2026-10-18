@@ -52,3 +52,11 @@ export function recordRecentlyViewed(courseId: string, now = Date.now()): void {
     ...entries,
   ].slice(0, RECENTLY_VIEWED_LIMIT));
 }
+
+export function clearRecentlyViewed(): void {
+  try {
+    localStorage.removeItem(RECENTLY_VIEWED_KEY);
+  } catch {
+    // Storage may be unavailable in some environments; clearing is best-effort.
+  }
+}
