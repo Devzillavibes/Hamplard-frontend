@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { coursesApi, enrollmentsApi, lessonsApi } from '@/lib/api/services';
 import { formatDuration, cn } from '@/lib/utils';
 import CourseCompletionModal from '@/components/learn/CourseCompletionModal';
+import { AssignmentSubmission } from '@/components/learn/AssignmentSubmission';
 import { VideoPlayer } from '@/components/learn/VideoPlayer';
 import { AutoplayCountdown } from '@/components/learn/AutoplayCountdown';
 import type { Course, Enrollment, Lesson } from '@/types';
@@ -438,6 +439,10 @@ export default function LearnPage() {
                 </span>
               )}
             </div>
+
+            {activeLesson.type === 'ASSIGNMENT' && (
+              <AssignmentSubmission key={activeLesson.id} lesson={activeLesson} />
+            )}
 
             {/* Downloadable resource */}
             {activeLesson.resourceUrl && (
