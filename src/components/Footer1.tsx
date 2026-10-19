@@ -96,9 +96,9 @@ const columns: Column[] = [
     heading: "About Hamplard",
     links: [
       { label: "Our Story", href: "/about" },
-      { label: "Meet the Team", href: "/about/team" },
-      { label: "Press & Media", href: "/press" },
-      { label: "From the Blog", href: "/blog" },
+      { label: "Meet the Team", href: "/about" },
+      { label: "Press & Media", href: "/about" },
+      { label: "From the Blog", href: "/courses" },
     ],
   },
   
@@ -108,7 +108,7 @@ const columns: Column[] = [
       { label: "Explore All Courses", href: "/courses" },
       { label: "Get Certified", href: "/courses/certifications" },
       { label: "Train Your Team", href: "/teams" },
-      { label: "Curated Learning Paths", href: "/paths" },
+      { label: "Curated Learning Paths", href: "/courses" },
     ],
   },
   {
@@ -116,19 +116,19 @@ const columns: Column[] = [
     links: [
       { label: "Help Centre", href: "/help" },
       { label: "Talk to Us", href: "/contact" },
-      { label: "Join the Community", href: "/community" },
-      { label: "Platform Status", href: "/status" },
-      { label: "Accessibility", href: "/accessibility" },
+      { label: "Join the Community", href: "/teams" },
+      { label: "Platform Status", href: "/help" },
+      { label: "Accessibility", href: "/help" },
     ],
   },
   {
     heading: "Legal",
     links: [
-      { label: "Privacy Policy", href: "/legal/privacy" },
-      { label: "Terms of Service", href: "/legal/terms" },
-      { label: "Cookie Policy", href: "/legal/cookies" },
-      { label: "Refund Policy", href: "/legal/refunds" },
-      { label: "Sitemap", href: "/sitemap" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "Cookie Policy", href: "/privacy" },
+      { label: "Refund Policy", href: "/terms" },
+      { label: "Sitemap", href: "/sitemap.xml" },
     ],
   },
 ];

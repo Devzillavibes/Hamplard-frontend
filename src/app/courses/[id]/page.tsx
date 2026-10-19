@@ -118,7 +118,7 @@ export default async function CoursePage({ params }: Props) {
                 </p>
               </div>
             </div>
-            <Link href="/auth/login" className="btn-primary w-full text-center px-5 py-3">
+            <Link href="/login" className="btn-primary w-full text-center px-5 py-3">
               Sign in to enroll
             </Link>
             <Link
