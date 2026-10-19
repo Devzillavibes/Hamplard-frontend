@@ -236,11 +236,21 @@ export const lessonsApi = {
     });
   },
 
-  createModule: async (courseId: string, title: string, position: number) => {
+  createModule: async (
+    courseId: string,
+    title: string,
+    position: number,
+    unlockRule?: string,
+    prerequisiteModuleId?: string | null,
+    releaseDate?: string | null,
+  ) => {
     const { data } = await apiClient.post("/lessons/modules", {
       courseId,
       title,
       position,
+      unlockRule,
+      prerequisiteModuleId,
+      releaseDate,
     });
     return data.data;
   },
@@ -255,9 +265,43 @@ export const lessonsApi = {
     resourceUrl?: string;
     position: number;
     isFree?: boolean;
+    steps?: any[];
   }) => {
     const { data } = await apiClient.post("/lessons", payload);
     return data.data;
+  },
+
+  getStepProgress: async (lessonId: string): Promise<string[]> => {
+    const { data } = await apiClient.get<ApiResponse<string[]>>(
+      `/lessons/${lessonId}/steps/progress`,
+    );
+    return data.data;
+  },
+
+  saveStepProgress: async (
+    lessonId: string,
+    completedStepIds: string[],
+  ): Promise<void> => {
+    await apiClient.post(`/lessons/${lessonId}/steps/progress`, {
+      completedStepIds,
+    });
+  },
+};
+
+export const stepChecklistApi = {
+  getStepProgress: async (lessonId: string): Promise<string[]> => {
+    const { data } = await apiClient.get<ApiResponse<string[]>>(
+      `/lessons/${lessonId}/steps/progress`,
+    );
+    return data.data;
+  },
+  saveStepProgress: async (
+    lessonId: string,
+    completedStepIds: string[],
+  ): Promise<void> => {
+    await apiClient.post(`/lessons/${lessonId}/steps/progress`, {
+      completedStepIds,
+    });
   },
 };
 

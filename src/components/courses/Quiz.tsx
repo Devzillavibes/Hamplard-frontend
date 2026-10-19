@@ -246,6 +246,9 @@ export function Quiz({
         <h2 className="mt-4 text-xl font-semibold text-ink-900">
           {passed ? 'Congratulations!' : 'Keep Trying'}
         </h2>
+        <p className="mt-1 text-sm text-ink-600 font-medium">
+          You scored {score} out of {total}
+        </p>
         <p className="mt-1 text-sm text-ink-500">
           {passed
             ? 'You passed the quiz!'

@@ -146,6 +146,8 @@ function CourseBrowsePageContent() {
       sorted.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
+    } else if (urlSort === 'rated') {
+      sorted.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     }
     if (urlPrice) {
       sorted = sorted.filter((c) => {
@@ -163,8 +165,17 @@ function CourseBrowsePageContent() {
         sorted = sorted.filter((c) => (c.rating ?? 0) >= minRating);
       }
     }
+    if (urlDuration) {
+      sorted = sorted.filter((c) => {
+        const d = c.totalDuration ?? 0;
+        if (urlDuration === 'short') return d <= 2 * 3600;
+        if (urlDuration === 'medium') return d > 2 * 3600 && d <= 6 * 3600;
+        if (urlDuration === 'long') return d > 6 * 3600;
+        return true;
+      });
+    }
     return sorted;
-  }, [urlSort, urlPrice, urlRating]);
+  }, [urlSort, urlPrice, urlRating, urlDuration]);
 
   // Initial / filter change fetch
   useEffect(() => {
@@ -196,7 +207,7 @@ function CourseBrowsePageContent() {
       });
 
     return () => { cancelled = true; };
-  }, [urlCategory, urlLevel, urlSearch, applyClientFilters]);
+  }, [urlCategory, urlLevel, urlSearch, urlDuration, applyClientFilters]);
 
   // Read current page from URL parameter
   const urlPageParam = searchParams.get('page');
