@@ -28,6 +28,11 @@ interface FileUploadProps {
   maxFiles?: number;
   /** Called after a file finishes uploading successfully */
   onUploadComplete?: (file: UploadedFileResult) => void;
+  /** Called when an upload begins and when it finishes or fails. */
+  onUploadStart?: () => void;
+  onUploadFinish?: () => void;
+  /** Called when a file is removed; includes its uploaded URL when available. */
+  onFileRemove?: (url?: string) => void;
   /** Called if a file fails validation or upload */
   onUploadError?: (fileName: string, error: string) => void;
   /** Called with progress percentage (0-100) for single file uploads */
@@ -99,6 +104,9 @@ export function FileUpload({
   multiple = true,
   maxFiles,
   onUploadComplete,
+  onUploadStart,
+  onUploadFinish,
+  onFileRemove,
   onUploadError,
   onProgress,
   label = 'Upload files',
@@ -174,6 +182,7 @@ export function FileUpload({
       };
 
       xhr.onload = () => {
+        onUploadFinish?.();
         if (xhr.status >= 200 && xhr.status < 300) {
           let url = '';
           try {
@@ -197,12 +206,14 @@ export function FileUpload({
       };
 
       xhr.onerror = () => {
+        onUploadFinish?.();
         const message = 'Network error — please try again.';
         updateItem(item.id, { status: 'error', errorMessage: message, retryable: true });
         onUploadError?.(item.file.name, message);
       };
 
       xhr.onabort = () => {
+        onUploadFinish?.();
         const message = 'Upload cancelled.';
         updateItem(item.id, { status: 'error', errorMessage: message, retryable: true });
         onUploadError?.(item.file.name, message);
@@ -210,7 +221,7 @@ export function FileUpload({
 
       xhr.send(form);
     },
-    [uploadUrl, extraFields, onUploadComplete, onUploadError, onProgress],
+    [uploadUrl, extraFields, onUploadComplete, onUploadError, onProgress, onUploadFinish],
   );
 
   const addFiles = useCallback(
@@ -297,8 +308,12 @@ export function FileUpload({
 
       setItems((prev) => (multiple ? [...prev, ...newItems] : newItems));
 
-      newItems.filter((it) => it.status === 'uploading').forEach((it) => startUpload(it));
+      newItems.filter((it) => it.status === 'uploading').forEach((it) => {
+        onUploadStart?.();
+        startUpload(it);
+      });
     },
+    [multiple, maxFiles, items.length, accept, maxSizeBytes, onUploadError, onUploadStart, startUpload, getVideoDuration],
     [multiple, maxFiles, accept, maxSizeBytes, onUploadError, startUpload, getVideoDuration],
   );
 
@@ -308,10 +323,42 @@ export function FileUpload({
     setItems((prev) => {
       const target = prev.find((it) => it.id === id);
       if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      if (target) onFileRemove?.(target.resultUrl);
       return prev.filter((it) => it.id !== id);
     });
-  }, []);
+  }, [onFileRemove]);
 
+  const retryItem = useCallback(
+    (id: string) => {
+      setItems((prev) => {
+        const target = prev.find((it) => it.id === id);
+        if (target) {
+          updateItem(id, { status: 'uploading', progress: 0, errorMessage: undefined });
+          onUploadStart?.();
+          startUpload({ ...target, status: 'uploading', progress: 0, errorMessage: undefined });
+        }
+        return prev;
+      });
+    },
+    [startUpload, onUploadStart],
+  );
+
+  useEffect(() => {
+    return () => {
+      Object.values(xhrRefs.current).forEach((xhr) => xhr.abort());
+      xhrRefs.current = {};
+    };
+  }, []);
+  function handleDragLeave(e: React.DragEvent<HTMLDivElement>) {
+    // Ignore dragleave fired when the pointer moves onto a child element
+    if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) return;
+    setDragActive(false);
+  }
+
+  function handleRetry(item: UploadItem) {
+    updateItem(item.id, { status: 'uploading', progress: 0, errorMessage: undefined });
+    onUploadStart?.();
+    startUpload({ ...item, status: 'uploading', progress: 0 });
   function handleRetry(item: UploadItem) {
     updateItem(item.id, { status: 'uploading', progress: 0, errorMessage: undefined });
     startUpload({ ...item, status: 'uploading', progress: 0, errorMessage: undefined });
