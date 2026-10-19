@@ -132,6 +132,8 @@ const FOOTER_COLUMNS = [
       { label: 'Terms of service', href: '/terms' },
       { label: 'Privacy policy', href: '/privacy' },
       { label: 'Cookie policy', href: '/privacy#cookies' },
+      { label: 'Refund policy', href: '/terms' },
+      { label: 'Sitemap', href: '/sitemap.xml' },
       { label: 'Accessibility', href: '/#accessibility' },
     ],
   },

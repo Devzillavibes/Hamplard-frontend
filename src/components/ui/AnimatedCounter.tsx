@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-interface Props {
+export interface AnimatedCounterProps {
   value: number;
   suffix?: string;
   prefix?: string;
@@ -16,6 +16,7 @@ export function AnimatedCounter({
   prefix = "",
   duration = 2000,
   className,
+}: AnimatedCounterProps) {
 }: Props) {
   const [display, setDisplay] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
@@ -64,3 +65,5 @@ export function AnimatedCounter({
     </span>
   );
 }
+
+export default AnimatedCounter;
