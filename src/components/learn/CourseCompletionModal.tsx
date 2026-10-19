@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Copy, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { useReducedMotion } from '@/lib/hooks/use-reduced-motion';
+import { SocialShare } from '@/components/ui/SocialShare';
 
 type CourseCompletionModalProps = {
   open: boolean;
@@ -18,13 +20,14 @@ export default function CourseCompletionModal({
   onClose,
 }: CourseCompletionModalProps) {
   const [isVisible, setIsVisible] = useState(open);
+  const { prefersReducedMotion, mounted } = useReducedMotion();
 
   useEffect(() => {
     setIsVisible(open);
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !mounted || prefersReducedMotion) return;
 
     let cancelled = false;
 
@@ -46,7 +49,7 @@ export default function CourseCompletionModal({
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, mounted, prefersReducedMotion]);
 
   useEffect(() => {
     if (!open) return;
@@ -61,26 +64,10 @@ export default function CourseCompletionModal({
 
   if (!isVisible) return null;
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
-
-  const shareToPlatform = (platform: 'linkedin' | 'twitter') => {
-    const encodedUrl = encodeURIComponent(shareUrl || `https://hamplard.app/courses/${courseId}`);
-    const shareUrlMap = {
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just completed ${courseTitle} on Hamplard!`)}&url=${encodedUrl}`,
-    };
-
-    window.open(shareUrlMap[platform], '_blank', 'noopener,noreferrer');
-  };
-
-  const copyLink = async () => {
-    const urlToCopy = shareUrl || `https://hamplard.app/courses/${courseId}`;
-    try {
-      await navigator.clipboard.writeText(urlToCopy);
-    } catch {
-      window.prompt('Copy this link', urlToCopy);
-    }
-  };
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/courses/${courseId}`
+    : `https://hamplard.app/courses/${courseId}`;
+  const shareText = `I just completed ${courseTitle} on Hamplard! #Hamplard`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/70 px-4">
@@ -133,30 +120,13 @@ export default function CourseCompletionModal({
 
           <div className="mt-6">
             <p className="text-sm font-medium text-ink-600">Share your milestone</p>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => shareToPlatform('linkedin')}
-                className="rounded-full border border-ink-200 px-3 py-2 text-sm font-medium text-ink-600 transition-colors hover:border-saffron-300 hover:text-saffron-700"
-              >
-                LinkedIn
-              </button>
-              <button
-                type="button"
-                onClick={() => shareToPlatform('twitter')}
-                className="rounded-full border border-ink-200 px-3 py-2 text-sm font-medium text-ink-600 transition-colors hover:border-saffron-300 hover:text-saffron-700"
-              >
-                Twitter
-              </button>
-              <button
-                type="button"
-                onClick={copyLink}
-                className="inline-flex items-center gap-2 rounded-full border border-ink-200 px-3 py-2 text-sm font-medium text-ink-600 transition-colors hover:border-saffron-300 hover:text-saffron-700"
-              >
-                <Copy className="h-4 w-4" />
-                Copy link
-              </button>
-            </div>
+            <SocialShare
+              url={shareUrl}
+              courseTitle={courseTitle}
+              shareText={shareText}
+              size="sm"
+              className="mt-3 justify-center"
+            />
           </div>
         </div>
       </div>

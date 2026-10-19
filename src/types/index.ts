@@ -1,23 +1,23 @@
 // src/types/index.ts
 
-export type UserRole = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
+export type UserRole = "STUDENT" | "INSTRUCTOR" | "ADMIN";
 
 export type CourseStatus =
-  | 'DRAFT'
-  | 'PENDING'
-  | 'ACTIVE'
-  | 'PAUSED'
-  | 'ARCHIVED';
+  | "DRAFT"
+  | "PENDING"
+  | "ACTIVE"
+  | "PAUSED"
+  | "ARCHIVED";
 
-export type EnrollmentStatus = 'ACTIVE' | 'COMPLETED' | 'REFUNDED';
+export type EnrollmentStatus = "ACTIVE" | "COMPLETED" | "REFUNDED";
 
 export type AssignmentStatus =
-  | 'PENDING'
-  | 'SUBMITTED'
-  | 'APPROVED'
-  | 'REJECTED';
+  | "PENDING"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED";
 
-export type LessonType = 'VIDEO' | 'TEXT' | 'QUIZ' | 'ASSIGNMENT';
+export type LessonType = "VIDEO" | "TEXT" | "QUIZ" | "ASSIGNMENT";
 
 export type QuizType = 'multiple_choice' | 'multi_select' | 'true_false';
 
@@ -47,6 +47,17 @@ export interface User {
   createdAt: string;
 }
 
+/** Available quality levels for a lesson's video */
+export type VideoQualityLevel = "auto" | "1080p" | "720p" | "480p" | "360p";
+
+/** Per-resolution source URLs attached to a lesson (all optional) */
+export interface VideoQualities {
+  "1080p"?: string;
+  "720p"?: string;
+  "480p"?: string;
+  "360p"?: string;
+}
+
 export interface Lesson {
   id: string;
   moduleId: string;
@@ -60,6 +71,8 @@ export interface Lesson {
   quiz?: QuizQuestion[] | null;
   position: number;
   isFree: boolean;
+  /** Optional per-resolution URLs. When absent only 'auto' is available. */
+  videoQualities?: VideoQualities;
 }
 
 export interface CourseModule {
@@ -89,6 +102,7 @@ export interface Course {
   totalRevenue: number;
   txHash: string | null;
   approvedAt: string | null;
+  publishedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   instructor: {
@@ -102,7 +116,7 @@ export interface Course {
   rating?: number;
   reviewCount?: number;
   originalPrice?: number;
-  badge?: 'bestseller' | 'new' | 'hot';
+  badge?: "bestseller" | "new" | "hot";
 }
 
 export interface LessonProgress {
@@ -170,6 +184,20 @@ export interface Announcement {
   subject: string;
   message: string;
   deliveryCount: number;
+  status?: "draft" | "scheduled" | "published";
+  scheduledFor?: string | null;
+  createdAt: string;
+}
+
+/** A card the learner saved for future checkouts. Card details never leave Stripe. */
+export interface SavedPaymentMethod {
+  /** Stripe PaymentMethod id (`pm_…`). */
+  id: string;
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+  isDefault: boolean;
   createdAt: string;
 }
 
@@ -191,7 +219,11 @@ export interface Category {
 
 // ── Review & Rating ────────────────────────────────────────────────
 
-export type ReviewSortOption = 'most_recent' | 'most_helpful' | 'highest_rated' | 'lowest_rated';
+export type ReviewSortOption =
+  | "most_recent"
+  | "most_helpful"
+  | "highest_rated"
+  | "lowest_rated";
 
 export interface InstructorReply {
   /** Instructor's display name */
@@ -234,8 +266,8 @@ export interface RatingDistribution {
 
 // ── Lesson Q&A ────────────────────────────────────────────────────
 
-export type QnaSortOption = 'most_recent' | 'most_upvoted';
-export type QnaFilterOption = 'all' | 'mine' | 'unanswered';
+export type QnaSortOption = "most_recent" | "most_upvoted";
+export type QnaFilterOption = "all" | "mine" | "unanswered";
 
 export interface QnaReply {
   id: string;
@@ -273,8 +305,8 @@ export interface Bundle {
   title: string;
   description: string | null;
   thumbnailUrl: string | null;
-  totalValue: number;       // sum of individual course prices
-  bundlePrice: number;      // discounted price
+  totalValue: number; // sum of individual course prices
+  bundlePrice: number; // discounted price
   courses: Course[];
   relatedBundles?: BundleSummary[];
   createdAt: string;
@@ -289,6 +321,44 @@ export interface BundleSummary {
   bundlePrice: number;
   totalValue: number;
   courseCount: number;
+}
+
+// ── Gift ─────────────────────────────────────────────────────────────────
+
+export type GiftStatus = 'PENDING' | 'CLAIMED' | 'EXPIRED';
+
+export interface Gift {
+  id: string;
+  courseId: string;
+  senderEmail: string | null;
+  recipientEmail: string;
+  message: string | null;
+  deliveryDate: string;
+  claimToken: string;
+  status: GiftStatus;
+  claimedAt: string | null;
+  createdAt: string;
+  course?: Course;
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────
+
+export type LeaderboardPeriod = 'week' | 'month' | 'all';
+
+export interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  name: string | null;
+  avatarUrl: string | null;
+  coursesCompleted: number;
+  hoursLearned: number;
+  streakDays: number;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  currentUser: LeaderboardEntry | null;
+  period: LeaderboardPeriod;
 }
 
 // ── Instructor Student Analytics ─────────────────────────────────────────
