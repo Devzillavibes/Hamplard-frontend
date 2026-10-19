@@ -13,6 +13,9 @@ interface CheckoutErrorBoundaryProps {
 interface CheckoutErrorBoundaryState {
   hasError: boolean;
   resetKey: number;
+  retryCount: number;
+  isRetrying: boolean;
+  retryCountdown: number;
 }
 
 export class CheckoutErrorBoundary extends React.Component<
@@ -22,22 +25,65 @@ export class CheckoutErrorBoundary extends React.Component<
   state: CheckoutErrorBoundaryState = {
     hasError: false,
     resetKey: 0,
+    retryCount: 0,
+    isRetrying: false,
+    retryCountdown: 0,
   };
 
-  static getDerivedStateFromError(): Partial<CheckoutErrorBoundaryState> {
-    return { hasError: true };
+  private countdownInterval: NodeJS.Timeout | null = null;
+
+  static getDerivedStateFromError(): CheckoutErrorBoundaryState {
+    return { hasError: true, resetKey: 0, retryCount: 0, isRetrying: false, retryCountdown: 0 };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('Checkout flow crashed', error, info.componentStack);
   }
 
+  componentWillUnmount() {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+  }
+
   private handleRetry = () => {
-    this.props.onReset?.();
-    this.setState((state) => ({
-      hasError: false,
-      resetKey: state.resetKey + 1,
-    }));
+    const { retryCount } = this.state;
+    
+    if (retryCount === 0) {
+      // First retry: immediate reset
+      this.props.onReset?.();
+      this.setState((state) => ({
+        hasError: false,
+        resetKey: state.resetKey + 1,
+        retryCount: state.retryCount + 1,
+      }));
+    } else {
+      // Subsequent retries: show countdown then retry
+      const backoffSeconds = Math.pow(2, retryCount - 1);
+      let countdown = backoffSeconds;
+      
+      this.setState({
+        isRetrying: true,
+        retryCountdown: countdown,
+      });
+
+      this.countdownInterval = setInterval(() => {
+        countdown -= 1;
+        this.setState({ retryCountdown: countdown });
+
+        if (countdown === 0) {
+          clearInterval(this.countdownInterval!);
+          this.props.onReset?.();
+          this.setState((state) => ({
+            hasError: false,
+            resetKey: state.resetKey + 1,
+            retryCount: state.retryCount + 1,
+            isRetrying: false,
+            retryCountdown: 0,
+          }));
+        }
+      }, 1000);
+    }
   };
 
   render() {
@@ -55,11 +101,17 @@ export class CheckoutErrorBoundary extends React.Component<
             Your cart is safe. Try the checkout again, or contact support if the problem
             continues.
           </p>
+          {this.state.isRetrying && this.state.retryCountdown > 0 && (
+            <p className="mt-2 text-sm text-ink-600">
+              Retrying in {this.state.retryCountdown}s...
+            </p>
+          )}
           <div className="mt-6 flex w-full max-w-xs flex-col gap-3 sm:flex-row">
             <Button
               type="button"
               fullWidth
               onClick={this.handleRetry}
+              disabled={this.state.isRetrying}
               icon={<RefreshCw className="h-4 w-4" />}
             >
               Try again

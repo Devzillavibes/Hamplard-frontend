@@ -16,10 +16,12 @@ interface Props {
 }
 
 export function CourseCardGrid({ courses, loading = false, skeletons = 8, aboveFoldCount = 4 }: Props) {
+  const skeletonArray = Array.from({ length: skeletons });
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {loading
-        ? Array.from({ length: skeletons }).map((_, i) => (
+        ? skeletonArray.map((_, i) => (
             <CourseCardSkeleton key={i} />
           ))
         : courses.map((course, index) => (
