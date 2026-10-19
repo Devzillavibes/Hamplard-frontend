@@ -9,6 +9,7 @@ import {
 import Link from 'next/link';
 import { coursesApi, enrollmentsApi, lessonsApi } from '@/lib/api/services';
 import { formatDuration, cn } from '@/lib/utils';
+import { sanitizeHtml } from '@/lib/utils/sanitize';
 import CourseCompletionModal from '@/components/learn/CourseCompletionModal';
 import { AssignmentSubmission } from '@/components/learn/AssignmentSubmission';
 import { VideoPlayer } from '@/components/learn/VideoPlayer';
@@ -405,7 +406,7 @@ export default function LearnPage() {
             {activeLesson.type === "TEXT" && activeLesson.content && (
               <div className="card p-6 mb-5 prose prose-sm max-w-none">
                 <div
-                  dangerouslySetInnerHTML={{ __html: activeLesson.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeLesson.content) }}
                 />
               </div>
             )}
