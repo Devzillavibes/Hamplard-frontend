@@ -30,7 +30,7 @@ export function BottomTabs() {
         <BookOpen className="w-5 h-5" />
         Courses
       </Link>
-      <Link href="/wishlist" className="flex flex-col items-center text-xs text-ink-600">
+      <Link href="/dashboard/wishlist" className="flex flex-col items-center text-xs text-ink-600">
         <Heart className="w-5 h-5" />
         Wishlist
       </Link>
@@ -52,7 +52,7 @@ export function BottomTabs() {
         </span>
         Notifications
       </Link>
-      <Link href="/account" className="flex flex-col items-center text-xs text-ink-600">
+      <Link href="/dashboard/profile" className="flex flex-col items-center text-xs text-ink-600">
         <User className="w-5 h-5" />
         Account
       </Link>
