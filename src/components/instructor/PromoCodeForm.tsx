@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { promoCodeSchema, type PromoCodeFormValues } from '@/lib/validations/promo-code';
@@ -43,6 +43,7 @@ export function PromoCodeForm({ onSuccess, onError }: PromoCodeFormProps) {
     handleSubmit,
     formState: { errors },
     reset,
+    control,
   } = useForm<PromoCodeFormValues>({
     resolver: zodResolver(promoCodeSchema),
     defaultValues: {
@@ -50,6 +51,11 @@ export function PromoCodeForm({ onSuccess, onError }: PromoCodeFormProps) {
       discountValue: 10,
       maxUses: 100,
     },
+  });
+
+  const discountType = useWatch({
+    control,
+    name: 'discountType',
   });
 
   const onSubmit = async (values: PromoCodeFormValues) => {
@@ -137,13 +143,12 @@ export function PromoCodeForm({ onSuccess, onError }: PromoCodeFormProps) {
 
         <div>
           <label htmlFor="discountValue" className="label">
-            Discount Value {/* @ts-ignore */}
-            {register('discountType').value === 'PERCENTAGE' ? '(%)' : '($)'}
+            Discount Value {discountType === 'PERCENTAGE' ? '(%)' : '($)'}
           </label>
           <input
             id="discountValue"
             type="number"
-            step={/* @ts-ignore */ register('discountType').value === 'PERCENTAGE' ? '1' : '0.01'}
+            step={discountType === 'PERCENTAGE' ? '1' : '0.01'}
             min="0"
             placeholder="Enter value"
             className={cn(

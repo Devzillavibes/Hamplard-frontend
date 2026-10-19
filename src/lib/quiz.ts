@@ -1,5 +1,7 @@
 /**
  * Quiz helpers used by the lesson quiz (`components/learn/QuizComponent`).
+ * Quiz helpers used by the quiz component
+ * (`components/learn/QuizComponent`).
  */
 
 /**

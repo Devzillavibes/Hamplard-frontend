@@ -17,6 +17,7 @@ export function AnimatedCounter({
   duration = 2000,
   className,
 }: AnimatedCounterProps) {
+}: Props) {
   const [display, setDisplay] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const hasRun = useRef(false);

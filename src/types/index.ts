@@ -19,7 +19,11 @@ export type AssignmentStatus =
 
 export type LessonType = "VIDEO" | "TEXT" | "QUIZ" | "ASSIGNMENT";
 
-export type QuizType = 'multiple_choice' | 'multi_select' | 'true_false';
+export type QuizType =
+  | 'multiple_choice'
+  | 'multi_select'
+  | 'true_false'
+  | 'short_answer';
 
 export interface QuizOption {
   id: string;
@@ -32,6 +36,8 @@ export interface QuizQuestion {
   type: QuizType;
   question: string;
   options?: QuizOption[];
+  /** Expected text for `short_answer` questions (compared case-insensitively). */
+  correctAnswer?: string;
   explanation?: string;
 }
 

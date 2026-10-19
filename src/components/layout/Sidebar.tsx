@@ -42,6 +42,10 @@ const STUDENT_NAV: NavItem[] = [
   { href: '/notifications', label: 'Notifications', icon: Bell },
 ];
 
+const INSTRUCTOR_NAV: NavItem[] = [
+  { href: '/dashboard/instructor',  label: 'Dashboard',      icon: BarChart2 },
+  { href: '/dashboard/courses',     label: 'My Courses',     icon: BookOpen },
+  { href: '/dashboard/courses/create', label: 'New Course',  icon: Video },
 const INSTRUCTOR_NAV = [
   { href: '/dashboard/instructor', label: 'Dashboard', icon: BarChart2 },
   { href: '/dashboard/instructor/courses', label: 'My Courses', icon: BookOpen },
