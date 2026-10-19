@@ -125,6 +125,20 @@ Visual regression tests run automatically in GitHub Actions on every push and pu
 - The Playwright HTML report (with side-by-side diffs)
 - Test traces for debugging
 
+### Continuous Integration
+
+Every pull request runs the `ci` workflow (`.github/workflows/ci.yml`), which executes these steps in order and fails on the first error:
+
+1. `npm ci`
+2. `npm run typecheck`
+3. `npm run lint`
+4. `npm test`
+5. `npm run build`
+
+Run the same commands locally before opening a PR. `~/.npm` and `.next/cache` are cached between runs.
+
+**Required checks:** `ci` must pass before a PR can be merged. Maintainers should enable it under **Settings → Branches → Branch protection rules → Require status checks to pass before merging**.
+
 ---
 
 ## License
