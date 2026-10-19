@@ -405,4 +405,5 @@ export function QuizComponent({
   );
 }
 
+export { QuizComponent as Quiz };
 export default QuizComponent;

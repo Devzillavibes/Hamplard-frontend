@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/layout/TopBar';
 import { TeamGrid, type TeamMember } from '@/components/about/TeamGrid';
-import { AnimatedCounter } from '@/components/about/AnimatedCounter';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { buildMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = buildMetadata({

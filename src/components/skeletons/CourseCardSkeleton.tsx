@@ -1,6 +1,6 @@
 export function CourseCardSkeleton() {
   return (
-    <div className="card overflow-hidden" role="status" aria-label="Loading course">
+    <div className="card overflow-hidden" role="status" aria-busy="true" aria-label="Loading course">
       {/* Thumbnail */}
       <div className="aspect-video bg-hamplard-lilac animate-pulse" />
 

@@ -1,6 +1,5 @@
 /**
- * Quiz helpers shared by the course quiz (`components/courses/Quiz`) and the
- * lesson quiz (`components/learn/QuizComponent`).
+ * Quiz helpers used by the lesson quiz (`components/learn/QuizComponent`).
  */
 
 /**
