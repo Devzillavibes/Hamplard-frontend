@@ -4,7 +4,6 @@ const config: StorybookConfig = {
   stories: ['../src/components/**/*.stories.tsx'],
   addons: [
     '@storybook/addon-links',
-    '@storybook/addon-actions',
   ],
   framework: {
     name: '@storybook/nextjs',

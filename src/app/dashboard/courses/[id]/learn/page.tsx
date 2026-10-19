@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { coursesApi, enrollmentsApi, lessonsApi } from '@/lib/api/services';
 import { formatDuration, cn } from '@/lib/utils';
 import { useToast } from '@/lib/hooks/use-toast';
+import { sanitizeHtml } from '@/lib/utils/sanitize';
 import CourseCompletionModal from '@/components/learn/CourseCompletionModal';
 import { AssignmentSubmission } from '@/components/learn/AssignmentSubmission';
 import { VideoPlayer } from '@/components/learn/VideoPlayer';
@@ -53,7 +54,9 @@ export default function LearnPage() {
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<'notFound' | 'network' | null>(null);
   const [marking, setMarking] = useState(false);
+  const [markError, setMarkError] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("lessons");
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
@@ -142,7 +145,9 @@ export default function LearnPage() {
   }, []);
 
   // ── Initial data load ────────────────────────────────────────────────────
-  useEffect(() => {
+  const loadCourseData = useCallback(() => {
+    setLoading(true);
+    setLoadError(null);
     Promise.all([
       coursesApi.get(id),
       enrollmentsApi.get(id),
@@ -167,11 +172,22 @@ export default function LearnPage() {
       }) ?? allLessons[0];
       if (first) setActiveLesson(first);
     })
-    .catch(console.error)
+    .catch((err) => {
+      console.error(err);
+      const status = (err as { response?: { status?: number }; status?: number })?.response?.status ?? (err as { status?: number })?.status;
+      if (status === 404) {
+        setLoadError('notFound');
+      } else {
+        setLoadError('network');
+      }
+    })
     .finally(() => setLoading(false));
-
-    return () => { if (progressRef.current) clearInterval(progressRef.current); };
   }, [id]);
+
+  useEffect(() => {
+    loadCourseData();
+    return () => { if (progressRef.current) clearInterval(progressRef.current); };
+  }, [loadCourseData]);
 
   // ── Course completion detection ──────────────────────────────────────────
   useEffect(() => {
@@ -212,6 +228,7 @@ export default function LearnPage() {
   // ── Dismiss countdown when lesson changes (e.g. sidebar click) ──────────
   useEffect(() => {
     setShowCountdown(false);
+    setMarkError(null);
   }, [activeLesson]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -223,10 +240,14 @@ export default function LearnPage() {
   const handleMarkComplete = async () => {
     if (!activeLesson || !enrollment || marking) return;
     setMarking(true);
+    setMarkError(null);
     try {
       await lessonsApi.markComplete(activeLesson.id, enrollment.id);
       const updated = await enrollmentsApi.get(id);
       setEnrollment(updated);
+    } catch (err) {
+      console.error(err);
+      setMarkError('Failed to mark lesson as complete. Please try again.');
     } finally {
       setMarking(false);
     }
@@ -243,7 +264,21 @@ export default function LearnPage() {
     </div>
   );
 
-  if (!course)
+  if (loadError === 'network') {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+        <p className="text-ink-700 font-medium mb-3">Failed to load course. Please check your connection.</p>
+        <button
+          onClick={loadCourseData}
+          className="btn-primary inline-flex items-center gap-2"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (loadError === 'notFound' || !course)
     return (
       <div className="text-center py-16 text-ink-500">Course not found.</div>
     );
@@ -485,7 +520,7 @@ export default function LearnPage() {
             {activeLesson.type === "TEXT" && activeLesson.content && (
               <div className="card p-6 mb-5 prose prose-sm max-w-none">
                 <div
-                  dangerouslySetInnerHTML={{ __html: activeLesson.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(activeLesson.content) }}
                 />
               </div>
             )}
@@ -515,25 +550,32 @@ export default function LearnPage() {
                 )}
               </div>
 
-              {!isLessonCompleted(activeLesson.id) ? (
-                <button
-                  onClick={handleMarkComplete}
-                  disabled={marking}
-                  className="btn-leaf flex-shrink-0 ml-4"
-                >
-                  {marking ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4" />
-                  )}
-                  Mark complete
-                </button>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-leaf-600 bg-leaf-50 px-3 py-1.5 rounded-xl">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Completed
-                </span>
-              )}
+              <div className="flex flex-col items-end flex-shrink-0 ml-4">
+                {!isLessonCompleted(activeLesson.id) ? (
+                  <button
+                    onClick={handleMarkComplete}
+                    disabled={marking}
+                    className="btn-leaf flex-shrink-0"
+                  >
+                    {marking ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4" />
+                    )}
+                    Mark complete
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-leaf-600 bg-leaf-50 px-3 py-1.5 rounded-xl">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Completed
+                  </span>
+                )}
+                {markError && (
+                  <p role="alert" className="mt-2 text-xs text-rose-500 text-right">
+                    {markError}
+                  </p>
+                )}
+              </div>
             </div>
 
             {activeLesson.type === 'ASSIGNMENT' && (

@@ -126,18 +126,18 @@ export function buildPaginatedMetadata({
   const resolvedDescription = description ?? siteConfig.description;
   const socialTitle = title ? `${title} | ${siteConfig.name}` : siteConfig.name;
 
-  // Build prev/next links
-  const links: Array<{ rel: string; href: string }> = [];
+  // Build prev/next links as key/value pairs
+  const other: Record<string, string> = {};
 
   if (currentPage > 1) {
     const prevPage = currentPage - 1;
     const prevPath = prevPage === 1 ? basePath : `${basePath}?page=${prevPage}`;
-    links.push({ rel: 'prev', href: absoluteUrl(prevPath) });
+    other.prev = absoluteUrl(prevPath);
   }
 
   if (currentPage < totalPages) {
     const nextPath = `${basePath}?page=${currentPage + 1}`;
-    links.push({ rel: 'next', href: absoluteUrl(nextPath) });
+    other.next = absoluteUrl(nextPath);
   }
 
   return {
@@ -163,6 +163,6 @@ export function buildPaginatedMetadata({
       ...(images ? { images } : {}),
     },
     // Add other links for prev/next
-    ...(links.length > 0 ? { other: links } : {}),
+    ...(Object.keys(other).length > 0 ? { other } : {}),
   };
 }

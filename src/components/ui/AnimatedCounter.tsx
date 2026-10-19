@@ -2,13 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 
-interface Props {
+export interface AnimatedCounterProps {
   value: number;
   suffix?: string;
+  prefix?: string;
   duration?: number;
+  className?: string;
 }
 
-export function AnimatedCounter({ value, suffix = "", duration = 2000 }: Props) {
+export function AnimatedCounter({
+  value,
+  suffix = "",
+  prefix = "",
+  duration = 2000,
+  className,
+}: AnimatedCounterProps) {
+}: Props) {
   const [display, setDisplay] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   const hasRun = useRef(false);
@@ -49,9 +58,12 @@ export function AnimatedCounter({ value, suffix = "", duration = 2000 }: Props) 
   }, [value, duration]);
 
   return (
-    <span ref={ref}>
+    <span ref={ref} className={className}>
+      {prefix}
       {display.toLocaleString()}
       {suffix}
     </span>
   );
 }
+
+export default AnimatedCounter;
