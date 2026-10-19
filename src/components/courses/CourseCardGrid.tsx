@@ -37,6 +37,22 @@ function getColumnCount(width: number): number {
   return 1;
 }
 
+export function CourseCardGrid({ courses, loading = false, skeletons = 8, aboveFoldCount = 4 }: Props) {
+  const skeletonArray = Array.from({ length: skeletons });
+  
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {loading
+        ? skeletonArray.map((_, i) => (
+            <CourseCardSkeleton key={i} />
+          ))
+        : courses.map((course, index) => (
+            <CourseCard
+              key={course.id}
+              course={course}
+              priority={index < aboveFoldCount}
+            />
+          ))}
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 export function CourseCardGrid({
