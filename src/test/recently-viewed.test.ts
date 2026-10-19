@@ -3,6 +3,7 @@ import {
   RECENTLY_VIEWED_KEY,
   RECENTLY_VIEWED_LIMIT,
   RECENTLY_VIEWED_MAX_AGE_MS,
+  clearRecentlyViewed,
   getRecentlyViewed,
   recordRecentlyViewed,
 } from '@/lib/recently-viewed';
@@ -21,6 +22,17 @@ describe('recently viewed courses', () => {
     expect(entries[0].courseId).toBe('course-5');
     expect(new Set(entries.map(({ courseId }) => courseId)).size).toBe(entries.length);
     expect(entries.some(({ courseId }) => courseId === 'course-0')).toBe(false);
+  });
+
+  it('clears all entries and removes the key from storage', () => {
+    recordRecentlyViewed('course-a');
+    recordRecentlyViewed('course-b');
+    expect(getRecentlyViewed()).toHaveLength(2);
+
+    clearRecentlyViewed();
+
+    expect(getRecentlyViewed()).toHaveLength(0);
+    expect(localStorage.getItem(RECENTLY_VIEWED_KEY)).toBeNull();
   });
 
   it('purges entries older than thirty days', () => {

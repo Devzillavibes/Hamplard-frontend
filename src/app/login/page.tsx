@@ -155,9 +155,6 @@ function LoginForm() {
               />
               Remember me
             </label>
-            <Link href="/forgot-password" className="text-sm font-medium text-[#3C3489] hover:underline">
-              Forgot password?
-            </Link>
           </div>
 
           {formError && (

@@ -224,7 +224,7 @@ export default function AboutPage() {
               Join as a student
             </Link>
             <Link
-              href="/instructor-apply"
+              href="/teach"
               className="inline-flex items-center justify-center rounded-xl border border-white/30 px-8 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
               Become an instructor
