@@ -58,7 +58,7 @@ function StarIcon({ fill }: { fill: number }) {
 export default function StarRatingSelector() {
   const [sel, setSel] = useState(0);
   const [hov, setHov] = useState(0);
-  const [focusIdx, setFocusIdx] = useState(0);
+  const [focusIdx, setFocusIdx] = useState(1);
   const starRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const active = hov || sel;
@@ -76,11 +76,14 @@ export default function StarRatingSelector() {
   function handleStarClick(i: number) {
     setSel((prev: number) => (prev === i ? 0 : i));
     setHov(0);
+    setFocusIdx(i);
   }
 
   function focusStar(i: number) {
     const clamped = Math.max(1, Math.min(5, i));
     setFocusIdx(clamped);
+    setSel(clamped);
+    setHov(0);
     starRefs.current[clamped - 1]?.focus();
   }
 
@@ -107,7 +110,9 @@ export default function StarRatingSelector() {
       case " ":
       case "Enter":
         e.preventDefault();
-        handleStarClick(i);
+        setSel(i);
+        setHov(0);
+        setFocusIdx(i);
         break;
       default:
         break;
@@ -290,6 +295,16 @@ export default function StarRatingSelector() {
                 </button>
               )}
             </div>
+
+            <div
+              aria-live="polite"
+              style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 12 }}
+            >
+              <span style={{ fontSize: 24, fontWeight: 600, color: "#1a1a1a" }}>
+                {avgNum}
+              </span>
+              <span style={{ fontSize: 13, color: "#888" }}>{avgSub}</span>
+            </div>
           </div>
 
           {/* Body */}
@@ -311,19 +326,51 @@ export default function StarRatingSelector() {
               const pct = Math.round((BASE_COUNTS[i - 1] / TOTAL) * 100);
               const isSelected = sel === i;
               return (
-                <div
+                <button
                   key={i}
-                  role="button"
                   aria-label={`Filter to ${i} stars`}
-                  tabIndex={0}
+                  aria-pressed={isSelected}
                   onClick={() => {
                     setSel((prev: number) => (prev === i ? 0 : i));
+                    setHov(0);
+                  }}
+                  type="button"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    width: "100%",
+                    padding: "6px 0",
+                    border: "none",
+                    background: "transparent",
+                    color: "#555",
+                    textAlign: "left",
+                    cursor: "pointer",
                   }}
                 >
-                  <span>{i}</span>
-                  <span>{pct}%</span>
-                  {isSelected && <span>selected</span>}
-                </div>
+                  <span style={{ width: 42, flexShrink: 0 }}>{i} ★</span>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      height: 8,
+                      flex: 1,
+                      overflow: "hidden",
+                      borderRadius: 4,
+                      background: "#eee",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "block",
+                        width: `${pct}%`,
+                        height: "100%",
+                        borderRadius: 4,
+                        background: isSelected ? P : "#b8b4ee",
+                      }}
+                    />
+                  </span>
+                  <span style={{ width: 38, textAlign: "right" }}>{pct}%</span>
+                </button>
               );
             })}
           </div>
