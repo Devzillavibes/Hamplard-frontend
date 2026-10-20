@@ -311,4 +311,66 @@ describe("QuizComponent", () => {
       randomSpy.mockRestore();
     }
   });
+  describe("short answer and navigation", () => {
+    const mixed: QuizQuestion[] = [
+      {
+        id: "s1",
+        type: "short_answer",
+        question: "What is 2 + 2?",
+        correctAnswer: "4",
+      },
+      {
+        id: "s2",
+        type: "true_false",
+        question: "The Moon orbits the Earth.",
+      },
+    ];
+
+    it("grades short answers case-insensitively", async () => {
+      const user = userEvent.setup();
+      render(<QuizComponent questions={mixed} />);
+
+      await user.type(screen.getByLabelText("Your answer"), " 4 ");
+      await user.click(screen.getByRole("button", { name: "Submit Answer" }));
+
+      expect(screen.getByText("Correct!")).toBeInTheDocument();
+    });
+
+    it("marks a wrong short answer incorrect", async () => {
+      const user = userEvent.setup();
+      render(<QuizComponent questions={mixed} />);
+
+      await user.type(screen.getByLabelText("Your answer"), "5");
+      await user.click(screen.getByRole("button", { name: "Submit Answer" }));
+
+      expect(screen.getByText("Incorrect")).toBeInTheDocument();
+    });
+
+    it("lets the learner go back to the previous question", async () => {
+      const user = userEvent.setup();
+      render(<QuizComponent questions={mixed} />);
+
+      expect(screen.getByRole("button", { name: /Previous/ })).toBeDisabled();
+
+      await user.type(screen.getByLabelText("Your answer"), "4");
+      await user.click(screen.getByRole("button", { name: "Submit Answer" }));
+      await user.click(screen.getByRole("button", { name: /Next/ }));
+      expect(screen.getByText("Question 2 of 2")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: /Previous/ }));
+      expect(screen.getByText("Question 1 of 2")).toBeInTheDocument();
+    });
+
+    it("offers a review of answers from the results screen", async () => {
+      const user = userEvent.setup();
+      render(<QuizComponent questions={[mixed[0]]} />);
+
+      await user.type(screen.getByLabelText("Your answer"), "4");
+      await user.click(screen.getByRole("button", { name: "Submit Answer" }));
+      await user.click(screen.getByRole("button", { name: "See Results" }));
+      await user.click(screen.getByRole("button", { name: "Review answers" }));
+
+      expect(screen.getByText("Question 1 of 1")).toBeInTheDocument();
+    });
+  });
 });

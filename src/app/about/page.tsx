@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TopBar } from '@/components/layout/TopBar';
 import { TeamGrid, type TeamMember } from '@/components/about/TeamGrid';
-import { AnimatedCounter } from '@/components/about/AnimatedCounter';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { buildMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = buildMetadata({
@@ -119,21 +119,21 @@ export default function AboutPage() {
         <div className="grid gap-8 sm:grid-cols-3">
           <div className="rounded-[24px] border border-[#D5D2F6] bg-gradient-to-br from-[#EEEDFE] to-white p-8 text-center shadow-sm">
             <div className="text-4xl font-bold text-[#26215C]">
-              <AnimatedCounter value={10000} suffix="+" />
+              <AnimatedCounter value={10000} suffix="+" className="font-semibold" />
             </div>
             <p className="mt-2 text-sm font-medium text-[#5A5578]">Active Learners</p>
           </div>
 
           <div className="rounded-[24px] border border-[#D5D2F6] bg-gradient-to-br from-[#EEEDFE] to-white p-8 text-center shadow-sm">
             <div className="text-4xl font-bold text-[#26215C]">
-              <AnimatedCounter value={500} suffix="+" />
+              <AnimatedCounter value={500} suffix="+" className="font-semibold" />
             </div>
             <p className="mt-2 text-sm font-medium text-[#5A5578]">Quality Courses</p>
           </div>
 
           <div className="rounded-[24px] border border-[#D5D2F6] bg-gradient-to-br from-[#EEEDFE] to-white p-8 text-center shadow-sm">
             <div className="text-4xl font-bold text-[#26215C]">
-              <AnimatedCounter value={200} suffix="+" />
+              <AnimatedCounter value={200} suffix="+" className="font-semibold" />
             </div>
             <p className="mt-2 text-sm font-medium text-[#5A5578]">Expert Instructors</p>
           </div>
@@ -224,7 +224,7 @@ export default function AboutPage() {
               Join as a student
             </Link>
             <Link
-              href="/instructor-apply"
+              href="/teach"
               className="inline-flex items-center justify-center rounded-xl border border-white/30 px-8 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
               Become an instructor

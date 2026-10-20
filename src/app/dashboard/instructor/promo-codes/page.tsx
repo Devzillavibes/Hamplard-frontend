@@ -25,7 +25,7 @@ export default function PromoCodesPage() {
     try {
       setLoading(true);
       const response = await promoCodesApi.getMy();
-      setPromoCodes(response.items || []);
+      setPromoCodes(response.data || []);
       setError(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load promo codes.';

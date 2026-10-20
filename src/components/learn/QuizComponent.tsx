@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, ChevronRight, RotateCcw, X } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { shuffleQuestions } from "@/lib/quiz";
 import { useCountdown } from "@/lib/hooks/use-countdown";
@@ -38,6 +45,14 @@ function normalizeOptions(question: QuizQuestion) {
 }
 
 function isAnswerCorrect(question: QuizQuestion, answer: string[]) {
+  if (question.type === "short_answer") {
+    const given = (answer[0] ?? "").trim().toLowerCase();
+    return (
+      given !== "" &&
+      given === (question.correctAnswer ?? "").trim().toLowerCase()
+    );
+  }
+
   const options = normalizeOptions(question);
   const correctIds = new Set(
     options.filter((o) => o.isCorrect).map((o) => o.id),
@@ -131,6 +146,17 @@ export function QuizComponent({
     [question, isSubmitted],
   );
 
+  const handleShortAnswer = useCallback(
+    (value: string) => {
+      if (!question || isSubmitted) return;
+      setAnswers((prev) => ({
+        ...prev,
+        [question.id]: value.trim() === "" ? [] : [value],
+      }));
+    },
+    [question, isSubmitted],
+  );
+
   const handleSubmit = useCallback(() => {
     if (!question || !answered) return;
     setSubmitted((prev) => ({ ...prev, [question.id]: true }));
@@ -149,6 +175,15 @@ export function QuizComponent({
       setCurrentIndex((prev) => prev + 1);
     }
   }, [isLastQuestion]);
+
+  const handlePrevious = useCallback(() => {
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
+  }, []);
+
+  const handleReview = useCallback(() => {
+    setShowResults(false);
+    setCurrentIndex(0);
+  }, []);
 
   const handleRetake = useCallback(() => {
     setCurrentIndex(0);
@@ -229,6 +264,13 @@ export function QuizComponent({
             <RotateCcw className="h-4 w-4" />
             Retake
           </button>
+          <button
+            type="button"
+            onClick={handleReview}
+            className="inline-flex items-center gap-2 rounded-lg border border-ink-200 px-4 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50"
+          >
+            Review answers
+          </button>
           {onContinue && (
             <button
               type="button"
@@ -284,9 +326,29 @@ export function QuizComponent({
             ? "Select all that apply."
             : question.type === "true_false"
               ? "Select one."
-              : "Select one answer."}
+              : question.type === "short_answer"
+                ? "Type your answer."
+                : "Select one answer."}
         </p>
 
+        {question.type === "short_answer" ? (
+          <input
+            type="text"
+            value={selected[0] ?? ""}
+            onChange={(e) => handleShortAnswer(e.target.value)}
+            disabled={isSubmitted}
+            placeholder="Type your answer..."
+            aria-label="Your answer"
+            className={cn(
+              "mt-5 w-full rounded-lg border px-4 py-3 text-sm text-ink-900 placeholder:text-ink-400",
+              "focus:outline-none focus:ring-2 focus:ring-hamplard-primary/40",
+              !isSubmitted && "border-ink-200",
+              isSubmitted && correct && "border-emerald-500 bg-emerald-50",
+              isSubmitted && !correct && "border-rose-500 bg-rose-50",
+              isSubmitted && "cursor-not-allowed opacity-75",
+            )}
+          />
+        ) : (
         <div className="mt-5 space-y-3">
           {options.map((option) => {
             const isSelected = selected.includes(option.id);
@@ -341,6 +403,7 @@ export function QuizComponent({
             );
           })}
         </div>
+        )}
       </fieldset>
 
       {isSubmitted && (
@@ -375,7 +438,22 @@ export function QuizComponent({
         </div>
       )}
 
-      <div className="mt-6 flex items-center justify-end">
+      <div className="mt-6 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={handlePrevious}
+          disabled={currentIndex === 0}
+          className={cn(
+            "inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            currentIndex === 0
+              ? "cursor-not-allowed text-ink-300"
+              : "text-ink-600 hover:bg-ink-50",
+          )}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Previous
+        </button>
+
         {!isSubmitted ? (
           <button
             type="button"
@@ -405,4 +483,5 @@ export function QuizComponent({
   );
 }
 
+export { QuizComponent as Quiz };
 export default QuizComponent;

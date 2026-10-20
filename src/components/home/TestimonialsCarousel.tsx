@@ -117,14 +117,34 @@ export function TestimonialsCarousel({
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  // Cards visible at once; mirrors the basis-* breakpoints on the slides below.
+  // Starts at 1 on both server and client so hydration matches, then syncs on mount.
+  const [itemsPerPage, setItemsPerPage] = useState(1);
   const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalTestimonials = testimonials.length;
-  
-  // Determine how many cards to show at once based on screen (handled by CSS grid)
-  // Desktop: 3, Mobile: 1
-  const itemsPerPage = 3; // Max visible on desktop
-  const totalDots = Math.ceil(totalTestimonials / itemsPerPage);
+  // Number of slide positions: the last one shows the final `itemsPerPage` cards,
+  // so the track can never be translated past its content.
+  const totalPositions = Math.max(1, totalTestimonials - itemsPerPage + 1);
+
+  useEffect(() => {
+    const md = window.matchMedia('(min-width: 768px)');
+    const lg = window.matchMedia('(min-width: 1024px)');
+    const update = () => setItemsPerPage(lg.matches ? 3 : md.matches ? 2 : 1);
+    update();
+
+    md.addEventListener('change', update);
+    lg.addEventListener('change', update);
+    return () => {
+      md.removeEventListener('change', update);
+      lg.removeEventListener('change', update);
+    };
+  }, []);
+
+  // Keep the index in range when the breakpoint changes
+  useEffect(() => {
+    setActiveIndex((prev) => Math.min(prev, totalPositions - 1));
+  }, [totalPositions]);
 
   // Check for reduced motion preference
   useEffect(() => {
@@ -145,12 +165,12 @@ export function TestimonialsCarousel({
     // - User prefers reduced motion
     // - Carousel is paused (hover)
     // - Less than 2 testimonials
-    if (prefersReducedMotion || isPaused || totalTestimonials < 2) {
+    if (prefersReducedMotion || isPaused || totalPositions < 2) {
       return;
     }
 
     autoAdvanceTimerRef.current = setTimeout(() => {
-      setActiveIndex((prev) => (prev + 1) % totalTestimonials);
+      setActiveIndex((prev) => (prev + 1) % totalPositions);
     }, autoAdvanceInterval);
 
     return () => {
@@ -158,15 +178,15 @@ export function TestimonialsCarousel({
         clearTimeout(autoAdvanceTimerRef.current);
       }
     };
-  }, [activeIndex, isPaused, prefersReducedMotion, totalTestimonials, autoAdvanceInterval]);
+  }, [activeIndex, isPaused, prefersReducedMotion, totalPositions, autoAdvanceInterval]);
 
   const goToPrevious = useCallback(() => {
-    setActiveIndex((prev) => (prev - 1 + totalTestimonials) % totalTestimonials);
-  }, [totalTestimonials]);
+    setActiveIndex((prev) => (prev - 1 + totalPositions) % totalPositions);
+  }, [totalPositions]);
 
   const goToNext = useCallback(() => {
-    setActiveIndex((prev) => (prev + 1) % totalTestimonials);
-  }, [totalTestimonials]);
+    setActiveIndex((prev) => (prev + 1) % totalPositions);
+  }, [totalPositions]);
 
   const goToIndex = useCallback((index: number) => {
     setActiveIndex(index);
@@ -263,10 +283,14 @@ export function TestimonialsCarousel({
             </button>
           </div>
 
-          {/* Testimonials Grid */}
+          {/* Testimonials Track: a single row of slides, each 1/itemsPerPage wide.
+              Gutters come from slide padding (not `gap`) so translate % maps exactly to slides. */}
           <div className="overflow-hidden">
             <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 transition-transform duration-500 ease-in-out"
+              className={cn(
+                'flex -mx-2 sm:-mx-3',
+                !prefersReducedMotion && 'transition-transform duration-500 ease-in-out'
+              )}
               style={{
                 transform: `translateX(-${activeIndex * (100 / itemsPerPage)}%)`,
               }}
@@ -275,7 +299,10 @@ export function TestimonialsCarousel({
               aria-atomic="true"
             >
               {testimonials.map((testimonial) => (
-                <div key={testimonial.id} className="w-full">
+                <div
+                  key={testimonial.id}
+                  className="shrink-0 basis-full md:basis-1/2 lg:basis-1/3 px-2 sm:px-3"
+                >
                   <TestimonialCard testimonial={testimonial} />
                 </div>
               ))}
@@ -283,13 +310,13 @@ export function TestimonialsCarousel({
           </div>
 
           {/* Dot Navigation */}
-          {totalTestimonials > 1 && (
+          {totalPositions > 1 && (
             <div
               className="flex items-center justify-center gap-2 mt-8"
               role="tablist"
               aria-label="Testimonial navigation"
             >
-              {testimonials.map((testimonial, index) => (
+              {testimonials.slice(0, totalPositions).map((testimonial, index) => (
                 <button
                   key={testimonial.id}
                   type="button"

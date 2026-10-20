@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CountdownTimerProps {
@@ -22,18 +22,38 @@ const CountdownTimer = React.forwardRef<HTMLDivElement, CountdownTimerProps>(
     const [time, setTime] = useState<TimeUnits>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
     const [isExpired, setIsExpired] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const onExpireRef = useRef(onExpire);
+    const lastExpiryRef = useRef<number | null>(null);
+    const hasExpiredRef = useRef(false);
+    const expiryTime = expiresAt.getTime();
+
+    onExpireRef.current = onExpire;
 
     useEffect(() => {
       setMounted(true);
+      if (lastExpiryRef.current !== expiryTime) {
+        lastExpiryRef.current = expiryTime;
+        hasExpiredRef.current = false;
+      }
+
+      let interval: ReturnType<typeof setInterval> | undefined;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+
+      const expire = () => {
+        if (hasExpiredRef.current) return;
+        hasExpiredRef.current = true;
+        if (interval !== undefined) clearInterval(interval);
+        if (timeout !== undefined) clearTimeout(timeout);
+        setIsExpired(true);
+        setTime({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        onExpireRef.current?.();
+      };
 
       const calculateTimeRemaining = () => {
-        const now = new Date();
-        const difference = expiresAt.getTime() - now.getTime();
+        const difference = expiryTime - Date.now();
 
         if (difference <= 0) {
-          setIsExpired(true);
-          setTime({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-          onExpire?.();
+          expire();
           return;
         }
 
@@ -49,11 +69,17 @@ const CountdownTimer = React.forwardRef<HTMLDivElement, CountdownTimerProps>(
       // Calculate immediately on mount
       calculateTimeRemaining();
 
-      // Set up interval to update every second
-      const interval = setInterval(calculateTimeRemaining, 1000);
+      const remaining = expiryTime - Date.now();
+      if (remaining > 0) {
+        interval = setInterval(calculateTimeRemaining, 1000);
+        timeout = setTimeout(expire, remaining);
+      }
 
-      return () => clearInterval(interval);
-    }, [expiresAt, onExpire]);
+      return () => {
+        if (interval !== undefined) clearInterval(interval);
+        if (timeout !== undefined) clearTimeout(timeout);
+      };
+    }, [expiryTime]);
 
     if (!mounted) {
       return null;

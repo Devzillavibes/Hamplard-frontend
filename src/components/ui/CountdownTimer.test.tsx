@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CountdownTimer } from './CountdownTimer';
 
@@ -8,7 +8,7 @@ describe('CountdownTimer', () => {
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -59,7 +59,7 @@ describe('CountdownTimer', () => {
       const { rerender } = render(<CountdownTimer expiresAt={futureDate} />);
 
       // Fast forward 1 second
-      vi.advanceTimersByTime(1000);
+      act(() => vi.advanceTimersByTime(1000));
       rerender(<CountdownTimer expiresAt={futureDate} />);
 
       // Timer should have updated (we can verify it didn't error)
@@ -68,13 +68,18 @@ describe('CountdownTimer', () => {
 
     it('calls onExpire callback when timer reaches zero', () => {
       const onExpire = vi.fn();
+      const clearIntervalSpy = vi.spyOn(global, 'clearInterval');
       const futureDate = new Date(Date.now() + 1000);
       render(<CountdownTimer expiresAt={futureDate} onExpire={onExpire} />);
 
       // Fast forward past expiration
-      vi.advanceTimersByTime(1100);
+      act(() => vi.advanceTimersByTime(1100));
 
-      expect(onExpire).toHaveBeenCalled();
+      expect(onExpire).toHaveBeenCalledTimes(1);
+      expect(clearIntervalSpy).toHaveBeenCalled();
+      act(() => vi.advanceTimersByTime(5000));
+      expect(onExpire).toHaveBeenCalledTimes(1);
+      clearIntervalSpy.mockRestore();
     });
 
     it('shows "Offer ended" text when expired', () => {
@@ -82,7 +87,10 @@ describe('CountdownTimer', () => {
       render(<CountdownTimer expiresAt={futureDate} />);
 
       // Fast forward past expiration
-      vi.advanceTimersByTime(600);
+      act(() => vi.advanceTimersByTime(499));
+      expect(screen.queryByText('Offer ended')).not.toBeInTheDocument();
+
+      act(() => vi.advanceTimersByTime(1));
 
       expect(screen.getByText('Offer ended')).toBeInTheDocument();
     });
@@ -92,7 +100,7 @@ describe('CountdownTimer', () => {
       render(<CountdownTimer expiresAt={futureDate} label="Sale ends in" />);
 
       // Fast forward past expiration
-      vi.advanceTimersByTime(600);
+      act(() => vi.advanceTimersByTime(500));
 
       expect(screen.queryByText('Sale ends in')).not.toBeInTheDocument();
       expect(screen.getByText('Offer ended')).toBeInTheDocument();
